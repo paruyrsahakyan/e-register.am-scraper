@@ -1,6 +1,4 @@
 package com.webScraper.scraper.company;
-
-import com.sun.xml.internal.ws.developer.MemberSubmissionEndpointReference;
 import com.webScraper.scraper.Founder;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -10,20 +8,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Company {
-    private String companyType;
-    private String name;
+    private String companyType; //Կազմակերպության տիպը
+    private String name;       // Անվանում
     private String status; //Կարգավիճակ
-    private String recordNumber; //ԳրանցմանՀամար
+    private String recordNumber; //Գրանցման Համար
     private String HVHH; //ՀՎՀՀ
     private String CDK; //    ՁԿԴ
     private List<Founder> founders = new ArrayList<Founder>(); //Հիմնադիր(ներ)
 
+    //////////////////////////////////////////////////////////////////////////////////
+
+    /* this method receives Jsoupe document (parsed for web page of a company),
+    extracts information and set them into the field of Company object.
+         */
+
     public void setValues(Document document) {
         Elements tilteElement = document.getElementsByClass("compname");
-        String  title = tilteElement.text();
-        this.extractAndSetComponyType(title);
-        this.setName(title);
-//        System.out.println("company type:  " + companyType);
+        String  compname = tilteElement.text();
+        this.extractAndSetCompanyType(compname);
+        this.setName(compname);
          Elements compinfo = document.getElementsByClass("fnam");
         for (Element element : compinfo) {
             switch (element.text().charAt(0)) {
@@ -45,39 +48,45 @@ public class Company {
                 }
             }
         }
-        System.out.println("status: " + status + "Record Number:  "+ recordNumber + "HVHH:  "+ HVHH+ "CDK:  "+ CDK);
-        Elements founders = document.getElementsByAttributeValue("align", "left");
+               Elements founders = document.getElementsByAttributeValue("align", "left");
             if (founders!=null) {
             for (int i = 0; i < founders.size(); i = i+2) {
-//                System.out.println(i);
                 String founderName = founders.get(i).text();
-//                System.out.println("founder name: " +founderName);
                 String citizenship = founders.get(i + 1).text();
-//                System.out.println("citizenship: " +citizenship);
                 this.addFounder(new Founder(founderName, citizenship));
             }
         }
 
     }
+    ///////////////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////
+   /* this method creates and returns Json document from the fields
+    of Company object    */
 
-        @Override
-    public String toString() {
-        return "Company{" +
-                "companyType='" + companyType + '\'' +
-                ", name='" + name + '\'' +
-                ", status='" + status + '\'' +
-                ", recordNumber='" + recordNumber + '\'' +
-                ", HVHH='" + HVHH + '\'' +
-                ", CDK='" + CDK + '\'' +
-                ", Founders=" + founders +
-                '}';
+    public org.bson.Document getMongoDoc(){
+        org.bson.Document doc = new org.bson.Document();
+        doc.append("Անվանում", this.name);
+        doc.append("Տիպ", this.companyType);
+        doc.append("Կարգավիճակ", this.status);
+        doc.append("Գրամնցման համար", this.recordNumber);
+        doc.append("ՀՎՀՀ", this.HVHH);
+        doc.append("ՁԿԴ", this.CDK);
+
+        List<org.bson.Document> foundersArray = new ArrayList<org.bson.Document>();
+        int i=0;
+        for(Founder founder: founders){
+            org.bson.Document temp = new org.bson.Document();
+            temp.append("Անուն Ազգանուն", founder.getName());
+            temp.append("Քաղաքացիություն", founder.getCityzenship());
+            foundersArray.add(temp);
+        }
+        doc.append("Հիմնադիր(ներ)", foundersArray);
+        return doc;
     }
 
 
 
-    ///////////////////    getters and setters///////////
+    ///////////////////    getters and setters   ///////////
     public String getCompanyType() {
         return companyType;
     }
@@ -136,7 +145,11 @@ public class Company {
 
     //////////////////////////////////////////////////////////////////
 
-    public void extractAndSetComponyType(String title){
+/* the title of a company page includes its company type.
+this method checks witch type is included in the tile, and sets that int the field  <companyType>
+ */
+
+    public void extractAndSetCompanyType(String title){
         if (title.contains("Անհատ ձեռնարկատեր (Ա/Ձ)")){
             this.setCompanyType("Ա/Ձ");
         }
