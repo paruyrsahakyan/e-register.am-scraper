@@ -9,13 +9,13 @@ import com.webScraper.scraper.company.Company;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+
 
 
 public class Scraper {
     public static void main(String[] args)  {
 
+            // connecting  to remote Mongo db
         MongoClient mongoClient= new MongoClient(new MongoClientURI("mongodb+srv://paruyr:729326@cluster0-n3ktz.mongodb.net/test"));
         MongoDatabase mongoDatabase = mongoClient.getDatabase("E-register");
         MongoCollection mongoCollection = mongoDatabase.getCollection("Arm-Componies");
@@ -29,7 +29,6 @@ public class Scraper {
                         connect("https://www.e-register.am/am/companies/" + Integer.toString(i) /*String.valueOf(i)*/)
                         .userAgent("Mozilla")
                         .cookie("auth", "token")
-                        .timeout(3000)
                         .timeout(5000)
                         .get();
             } catch (IOException e) {
@@ -48,6 +47,7 @@ public class Scraper {
                 org.bson.Document JsonDocument = company.getMongoDoc();
                 System.out.println(JsonDocument);
 
+                //inserts document into db
                 mongoCollection.insertOne(JsonDocument);
                                     }
 
